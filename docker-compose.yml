@@ -1,7 +1,7 @@
 services:
   Kafka:
     image: apache/kafka:latest
-    container_name: kafka
+    container_name: kafka_ai
     ports:
       - "9092:9092"
     environment:
@@ -21,7 +21,7 @@ services:
 
   Ollama:
     image: ollama/ollama:rocm
-    container_name: ollama
+    container_name: ollama_ai
     ports:
       - "11434:11434"
     volumes:
