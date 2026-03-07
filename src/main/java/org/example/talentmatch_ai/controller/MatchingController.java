@@ -4,10 +4,9 @@ import org.example.talentmatch_ai.dto.MatchingDto;
 import org.example.talentmatch_ai.dto.MatchingRequest;
 import org.example.talentmatch_ai.service.MatchingService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/matching")
@@ -22,5 +21,15 @@ public class MatchingController {
     @PostMapping("/analyze")
     public ResponseEntity<MatchingDto> analyzeMatching(@RequestBody MatchingRequest request) {
         return ResponseEntity.ok(matchingService.analyzeMatch(request));
+    }
+
+    @GetMapping("/{matchingId}")
+    public ResponseEntity<MatchingDto> getMatching(@PathVariable String matchingId) {
+        return ResponseEntity.ok(matchingService.getMatchingResultById(matchingId));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<MatchingDto>> getAllMatchings() {
+        return ResponseEntity.ok(matchingService.getAllMatching());
     }
 }

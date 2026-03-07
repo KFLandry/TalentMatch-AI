@@ -1,6 +1,42 @@
 spring:
   application:
     name: TalentMatch AI
+  datasource:
+    url: jdbc:h2:mem:TalentMatch_AI
+    username: app
+    password: password
+    driverClassName: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create
   ai:
     ollama:
-      base-url: http://localhost:11434
+      base-url: http://172.24.193.28:11434
+      init:
+        pull-model-strategy: when_missing
+      chat:
+        options:
+          model: llama3.2:3b
+  kafka:
+    bootstrap-servers: 172.24.193.28:9092
+    consumer:
+      group-id: talent-match-ai-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      trusted-packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      type-mappings: "MatchingResultMessage:org.example.talentmatch_ai.model.MatchingResultMessage, KafkaMessage:org.example.talentmatch_ai.model.MatchingResultMessage"
+
+  h2:
+    console:
+      enabled: true
+
+logging:
+    level:
+        root: INFO
+        com.example.talentmatchai: DEBUG
+        org.springframework.ai.ollama: DEBUG
+        org.apache.kafka: WARN
