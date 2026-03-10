@@ -1,7 +1,6 @@
 package org.talentmatch_ai.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.talentmatch_ai.model.*;
 import org.talentmatch_ai.model.*;
 import org.talentmatch_ai.repository.CandidateRepo;
 import org.talentmatch_ai.repository.JobOfferRepo;
