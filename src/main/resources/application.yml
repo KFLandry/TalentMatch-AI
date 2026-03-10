@@ -28,7 +28,7 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      type-mappings: "MatchingResultMessage:org.example.talentmatch_ai.model.MatchingResultMessage, KafkaMessage:org.example.talentmatch_ai.model.MatchingResultMessage"
+      type-mappings: "MatchingResultMessage:org.talentmatch_ai.model.MatchingResultMessage, KafkaMessage:org.talentmatch_ai.model.MatchingResultMessage"
 
   h2:
     console:
