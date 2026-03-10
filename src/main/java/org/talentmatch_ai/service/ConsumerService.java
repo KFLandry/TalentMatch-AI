@@ -1,13 +1,14 @@
 package org.talentmatch_ai.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.ollama.OllamaChatModel;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Service;
+import org.talentmatch_ai.exception.ConsumerException;
 import org.talentmatch_ai.model.*;
 import org.talentmatch_ai.repository.CandidateRepo;
 import org.talentmatch_ai.repository.JobOfferRepo;
 import org.talentmatch_ai.repository.MatchingRepo;
-import org.springframework.ai.ollama.OllamaChatModel;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -71,11 +72,11 @@ public class ConsumerService {
         matchingRepo.save(matchingResult);
     }
 
-    public String buildPrompt(MatchingResultMessage message) {
+    private String buildPrompt(MatchingResultMessage message) throws ConsumerException {
         Candidate candidate = candidateRepo.findById(UUID.fromString(message.getCandidateId()))
-                .orElseThrow(() -> new RuntimeException("Candidate not found"));
+                .orElseThrow(() -> new ConsumerException("Candidate not found") {});
         JobOffer jobOffer = jobOfferRepo.findById(UUID.fromString(message.getJobOfferId()))
-                .orElseThrow(() -> new RuntimeException("Job offer not found"));
+                .orElseThrow(() -> new ConsumerException("Job offer not found"));
 
         return """
                 Analyse l'adéquation entre le candidat et l'offre d'emploi ci-dessous.
@@ -122,21 +123,21 @@ public class ConsumerService {
         );
     }
 
-    public String processMatching(String prompt) {
+    private String processMatching(String prompt) throws ConsumerException {
         try {
             return CompletableFuture.supplyAsync(() -> ollamaChatModel.call(prompt))
                     .get(TIMEOUT_MINUTES, TimeUnit.MINUTES);
         } catch (Exception e) {
-            throw new RuntimeException("Erreur lors de l'appel à l'IA (timeout ou indisponibilité) : " + e.getMessage(), e);
+            throw new ConsumerException("Erreur lors de l'appel à l'IA : " + e.getMessage());
         }
     }
 
-    public int extractScore(String response) {
+    private int extractScore(String response) throws ConsumerException {
         Matcher matcher = SCORE_PATTERN.matcher(response);
         if (matcher.find()) {
             int score = Integer.parseInt(matcher.group(1));
             return Math.min(100, Math.max(0, score));
         }
-        throw new RuntimeException("Impossible d'extraire le score depuis la réponse de l'IA");
+        throw new ConsumerException("Impossible d'extraire le score depuis la réponse de l'IA"){};
     }
 }
