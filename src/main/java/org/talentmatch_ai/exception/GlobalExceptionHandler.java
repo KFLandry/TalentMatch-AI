@@ -40,6 +40,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException ex,
+            HttpServletRequest request
+    ){
+        ErrorResponse error = ErrorResponse.builder()
+                .code(ErrorCode.VALIDATION_ERROR)
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .path(request.getRequestURI())
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
             ResourceNotFoundException ex,
@@ -59,10 +73,12 @@ public class GlobalExceptionHandler {
             GithubException ex,
             HttpServletRequest request
     ) {
+
         ErrorResponse error = ErrorResponse.builder()
                 .code(ErrorCode.GITHUB_IMPORT_ERROR)
                 .message(ErrorCode.GITHUB_IMPORT_ERROR.getMessage())
                 .timestamp(LocalDateTime.now())
+                .details(Map.of("error", ex.getMessage()))
                 .path(request.getRequestURI())
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);

@@ -8,6 +8,7 @@ public class GithubProfile {
     private String login;
     private String bio;
     private String name;
+    private String email;
 
     @JsonProperty("public_repos")
     private Integer publicRepos;

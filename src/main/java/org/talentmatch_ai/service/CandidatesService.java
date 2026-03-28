@@ -1,11 +1,12 @@
 package org.talentmatch_ai.service;
 
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 import org.talentmatch_ai.dto.GithubProfile;
+import org.talentmatch_ai.dto.GithubRepo;
+import org.talentmatch_ai.exception.GithubException;
 import org.talentmatch_ai.model.Candidate;
 import org.talentmatch_ai.repository.CandidateRepo;
-import org.talentmatch_ai.dto.GithubRepo;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,7 +42,7 @@ public class CandidatesService {
     public Candidate getCandidateById (UUID id){
         Candidate cand = candidateRepo.getCandidateById(id);
         if (cand == null){
-            throw new RuntimeException("utilisateur avec l'id " + id + " introuvable");
+            throw new ResourceNotFoundException("utilisateur avec l'id " + id + " introuvable");
         }
         else {
             return cand;
@@ -50,7 +51,7 @@ public class CandidatesService {
 
     public Candidate updateCandidate(UUID id, Candidate updatedCandidate) {
         Candidate existing = candidateRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Candidat non trouvé : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Candidat non trouvé : " + id));
 
         existing.setFirstName(updatedCandidate.getFirstName());
         existing.setLastName(updatedCandidate.getLastName());
@@ -63,14 +64,15 @@ public class CandidatesService {
         return candidateRepo.save(existing);
     }
 
-    public void deleteCandidate(UUID id) {
+    public String deleteCandidate(UUID id) {
         if (!candidateRepo.existsById(id)) {
-            throw new RuntimeException("Candidat non trouvé : " + id);
+            throw new ResourceNotFoundException("Candidat non trouvé : " + id);
         }
         candidateRepo.deleteById(id);
+        return "Candidat avec l'id " + id + " supprimé avec succès";
     }
 
-    public Candidate buildCandidateFromGithub(String username) {
+    public Candidate buildCandidateFromGithub(String username) throws GithubException {
         GithubProfile profile = githubService.getUserProfile(username);
         List<GithubRepo> repos = githubService.getReposByUsername(username);
 
@@ -92,12 +94,25 @@ public class CandidatesService {
                 .map(firstYear -> LocalDateTime.now().getYear() - firstYear)
                 .orElse(0);
 
-        return Candidate.builder()
+        // Check email
+        String email = profile.getEmail() != null ? profile.getEmail() : username + "@github.com";
+        if (candidateRepo.existsByEmail(email))
+            throw new GithubException("Un candidat avec cet email existe déjà : " + email);
+
+        String[] names = profile.getName() != null ? profile.getName().split(" ") : profile.getLogin().split(" ");
+         Candidate candidate = Candidate.builder()
+                .firstName(names[names.length - 1])
+                .lastName(names[0])
                 .githubUsername(username)
+                .email(email)
                 .bio(profile.getBio())
                 .skills(topSkills)
                 .yearsOfExperience(estimatedYearsOfExperience)
+                .createdAt(LocalDateTime.now())
                 .build();
+
+         return candidateRepo.save(candidate);
+
     }
 
 }

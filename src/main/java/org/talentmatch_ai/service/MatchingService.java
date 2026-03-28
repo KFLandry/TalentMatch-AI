@@ -57,9 +57,9 @@ public class MatchingService {
 
         // TODO push the matching request to Kafka for asynchronous processing
         MatchingResultMessage matchingResultMessage = MatchingResultMessage.builder()
-                .matchingId(String.valueOf(matchingDto.getId()))
-                .candidateId(String.valueOf(matchingDto.getCandidateId()))
-                .jobOfferId(String.valueOf(matchingDto.getJobOfferId()))
+                .matchingId(String.valueOf(matchingResult.getId()))
+                .candidateId(String.valueOf(matchingResult.getCandidateId()))
+                .jobOfferId(String.valueOf(matchingResult.getJobOfferId()))
                 .build();
         String matchingTopic = "matching-requests";
         CompletableFuture<SendResult<String, MatchingResultMessage>> future = kafkaTemplate.send(matchingTopic, matchingResultMessage);
@@ -75,28 +75,24 @@ public class MatchingService {
         return matchingDto;
     }
 
-    public MatchingDto getMatchingResultById(String matchingId) {
-        return matchingRepo.findById(java.util.UUID.fromString(matchingId))
-                .map(MatchingDto::matchingtoDto)
+    public MatchingResult getMatchingResultById(String matchingId) {
+        return matchingRepo.findById(UUID.fromString(matchingId))
                 .orElseThrow(() -> new ResourceNotFoundException("Matching result not found") {});
     }
 
-    public List<MatchingDto> getAllMatching() {
+    public List<MatchingResult> getAllMatching() {
         return matchingRepo.findAll().stream()
-                .map(MatchingDto::matchingtoDto)
                 .toList();
     }
 
 
-    public List<MatchingDto> getMatchingResultsByJobOfferId(String jobOfferId) {
+    public List<MatchingResult> getMatchingResultsByJobOfferId(String jobOfferId) {
         return matchingRepo.findByJobOfferId(UUID.fromString(jobOfferId)).stream()
-                .map(MatchingDto::matchingtoDto)
                 .toList();
     }
 
-    public List<MatchingDto> getMatchingResultsByCandidateId(String candidateId) {
+    public List<MatchingResult> getMatchingResultsByCandidateId(String candidateId) {
         return matchingRepo.findByCandidateId(UUID.fromString(candidateId)).stream()
-                .map(MatchingDto::matchingtoDto)
                 .toList();
     }
 }

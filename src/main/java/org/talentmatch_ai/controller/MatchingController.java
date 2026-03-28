@@ -3,6 +3,7 @@ package org.talentmatch_ai.controller;
 import org.springframework.http.HttpStatus;
 import org.talentmatch_ai.dto.MatchingDto;
 import org.talentmatch_ai.dto.MatchingRequest;
+import org.talentmatch_ai.model.MatchingResult;
 import org.talentmatch_ai.service.MatchingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,22 +25,22 @@ public class MatchingController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(matchingService.analyzeMatch(request));
     }
     @GetMapping("results")
-    public ResponseEntity<List<MatchingDto>> getAllMatchings() {
+    public ResponseEntity<List<MatchingResult>> getAllMatchings() {
         return ResponseEntity.ok(matchingService.getAllMatching());
     }
 
     @GetMapping("/results/{matchingId}")
-    public ResponseEntity<MatchingDto> getMatching(@PathVariable String matchingId) {
+    public ResponseEntity<MatchingResult> getMatching(@PathVariable String matchingId) {
         return ResponseEntity.ok(matchingService.getMatchingResultById(matchingId));
     }
 
     @GetMapping("/candidate/{candidateId}")
-    public ResponseEntity<List<MatchingDto>> getMatchingsByCandidate(@PathVariable String candidateId){
+    public ResponseEntity<List<MatchingResult>> getMatchingsByCandidate(@PathVariable String candidateId){
         return ResponseEntity.ok(matchingService.getMatchingResultsByCandidateId(candidateId));
     }
 
     @GetMapping("/job/{jobOfferId}")
-    public ResponseEntity<List<MatchingDto>> getMatchingsByJobOffer(@PathVariable String jobOfferId) {
+    public ResponseEntity<List<MatchingResult>> getMatchingsByJobOffer(@PathVariable String jobOfferId) {
         return ResponseEntity.ok(matchingService.getMatchingResultsByJobOfferId(jobOfferId));
     }
 
