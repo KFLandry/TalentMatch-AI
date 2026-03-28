@@ -136,7 +136,6 @@ Endpoints proteges:
 ### Difficultes rencontrees
 - Stabiliser les tests sur objets mutables (etat au moment du `save`)
 - Aligner annotations/imports de test avec Spring Boot 4
-- Variabilite d'environnement Java local pour l'execution des tests
 
 ## 6) Lancer les tests
 ```bash
