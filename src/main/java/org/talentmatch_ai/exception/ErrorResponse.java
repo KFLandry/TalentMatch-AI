@@ -3,23 +3,21 @@ package org.talentmatch_ai.exception;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class ErrorResponse {
 
-    private int status;
+    private ErrorCode code;
     private String message;
     private LocalDateTime timestamp;
+    private Map<String, String> details;
     private String path;
 
-    public ErrorResponse(int status, String message, String path) {
-        this.status = status;
-        this.message = message;
-        this.path = path;
-        this.timestamp = LocalDateTime.now();
-    }
 }

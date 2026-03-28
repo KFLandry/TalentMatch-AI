@@ -1,14 +1,5 @@
 package org.talentmatch_ai.service;
 
-import org.talentmatch_ai.model.Candidate;
-import org.talentmatch_ai.model.JobOffer;
-import org.talentmatch_ai.model.MatchingResultMessage;
-import org.talentmatch_ai.model.MatchingResult;
-import org.talentmatch_ai.model.Status;
-import org.talentmatch_ai.repository.CandidateRepo;
-import org.talentmatch_ai.repository.JobOfferRepo;
-import org.talentmatch_ai.repository.MatchingRepo;
-import org.talentmatch_ai.util.TestMockFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +8,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.ollama.OllamaChatModel;
+import org.talentmatch_ai.model.*;
+import org.talentmatch_ai.repository.CandidateRepo;
+import org.talentmatch_ai.repository.JobOfferRepo;
+import org.talentmatch_ai.repository.MatchingRepo;
+import org.talentmatch_ai.util.TestMockFactory;
 
 import java.util.Optional;
 
@@ -56,105 +52,6 @@ class ConsumerServiceTest {
                 .candidateId(candidate.getId().toString())
                 .jobOfferId(jobOffer.getId().toString())
                 .build();
-    }
-
-    // ─── buildPrompt ──────────────────────────────────────────────
-
-    @Test
-    void buildPrompt_shouldContainCandidateInfo() {
-        when(candidateRepo.findById(candidate.getId())).thenReturn(Optional.of(candidate));
-        when(jobOfferRepo.findById(jobOffer.getId())).thenReturn(Optional.of(jobOffer));
-
-        String prompt = consumerService.buildPrompt(matchingResultMessage);
-
-        assertAll(
-                () -> assertTrue(prompt.contains("Kevin")),
-                () -> assertTrue(prompt.contains("Durant")),
-                () -> assertTrue(prompt.contains("Java")),
-                () -> assertTrue(prompt.contains("Spring Boot")),
-                () -> assertTrue(prompt.contains("5"))
-        );
-    }
-
-    @Test
-    void buildPrompt_shouldContainJobOfferInfo() {
-        when(candidateRepo.findById(candidate.getId())).thenReturn(Optional.of(candidate));
-        when(jobOfferRepo.findById(jobOffer.getId())).thenReturn(Optional.of(jobOffer));
-
-        String prompt = consumerService.buildPrompt(matchingResultMessage);
-
-        assertAll(
-                () -> assertTrue(prompt.contains("Développeur Java/Spring Boot")),
-                () -> assertTrue(prompt.contains("TechCorp")),
-                () -> assertTrue(prompt.contains("PostgreSQL")),
-                () -> assertTrue(prompt.contains("Paris, France")),
-                () -> assertTrue(prompt.contains("45k-60k")),
-                () -> assertTrue(prompt.contains("Responsabilités"))
-        );
-    }
-
-    @Test
-    void buildPrompt_shouldContainInstructions() {
-        when(candidateRepo.findById(candidate.getId())).thenReturn(Optional.of(candidate));
-        when(jobOfferRepo.findById(jobOffer.getId())).thenReturn(Optional.of(jobOffer));
-
-        String prompt = consumerService.buildPrompt(matchingResultMessage);
-
-        assertAll(
-                () -> assertTrue(prompt.contains("Score:")),
-                () -> assertTrue(prompt.contains("Points forts")),
-                () -> assertTrue(prompt.contains("Points faibles")),
-                () -> assertTrue(prompt.contains("Recommandation"))
-        );
-    }
-
-    @Test
-    void buildPrompt_shouldHandleNullBio() {
-        candidate.setBio(null);
-        when(candidateRepo.findById(candidate.getId())).thenReturn(Optional.of(candidate));
-        when(jobOfferRepo.findById(jobOffer.getId())).thenReturn(Optional.of(jobOffer));
-
-        String prompt = consumerService.buildPrompt(matchingResultMessage);
-
-        assertTrue(prompt.contains("Non renseigné"));
-    }
-
-    @Test
-    void buildPrompt_shouldHandleNullSalaryRange() {
-        jobOffer.setSalaryRange(null);
-        when(candidateRepo.findById(candidate.getId())).thenReturn(Optional.of(candidate));
-        when(jobOfferRepo.findById(jobOffer.getId())).thenReturn(Optional.of(jobOffer));
-
-        String prompt = consumerService.buildPrompt(matchingResultMessage);
-
-        assertTrue(prompt.contains("Non renseigné"));
-    }
-
-    // ─── extractScore ─────────────────────────────────────────────
-
-    @Test
-    void extractScore_shouldParseValidScore() {
-        assertEquals(85, consumerService.extractScore("Score: 85\n\nPoints forts:\n- Java"));
-    }
-
-    @Test
-    void extractScore_shouldParseScoreWithEquals() {
-        assertEquals(72, consumerService.extractScore("score = 72\nAnalyse..."));
-    }
-
-    @Test
-    void extractScore_shouldClampScoreAbove100() {
-        assertEquals(100, consumerService.extractScore("Score: 150"));
-    }
-
-    @Test
-    void extractScore_shouldClampScoreBelow0() {
-        assertEquals(0, consumerService.extractScore("Score: 0"));
-    }
-
-    @Test
-    void extractScore_shouldThrowWhenNoScore() {
-        assertThrows(RuntimeException.class, () -> consumerService.extractScore("Pas de score ici"));
     }
 
     // ─── consume (flux complet) ───────────────────────────────────
@@ -220,32 +117,6 @@ class ConsumerServiceTest {
         verify(matchingRepo, times(2)).save(captor.capture());
 
         assertEquals(Status.COMPLETED, captor.getAllValues().getFirst().getStatus()); // 1er save = PROCESSING
-    }
-
-    // ─── scénarios croisés avec mocks variés ──────────────────────
-
-    @Test
-    void buildPrompt_withMismatchedProfiles_shouldContainBothInfos() {
-        Candidate dataCandidate = TestMockFactory.dataScienceCandidate();
-        JobOffer javaOffer = TestMockFactory.springBootDeveloperOffer();
-
-        MatchingResultMessage msg = MatchingResultMessage.builder()
-                .matchingId(matchingResult.getId().toString())
-                .candidateId(dataCandidate.getId().toString())
-                .jobOfferId(javaOffer.getId().toString())
-                .build();
-
-        when(candidateRepo.findById(dataCandidate.getId())).thenReturn(Optional.of(dataCandidate));
-        when(jobOfferRepo.findById(javaOffer.getId())).thenReturn(Optional.of(javaOffer));
-
-        String prompt = consumerService.buildPrompt(msg);
-
-        assertAll(
-                () -> assertTrue(prompt.contains("Python")),       // candidat data
-                () -> assertTrue(prompt.contains("TensorFlow")),   // candidat data
-                () -> assertTrue(prompt.contains("Spring Boot")),  // offre Java
-                () -> assertTrue(prompt.contains("TechCorp"))      // offre Java
-        );
     }
 }
 

@@ -1,20 +1,22 @@
 package org.talentmatch_ai.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.stereotype.Service;
 import org.talentmatch_ai.dto.MatchingDto;
 import org.talentmatch_ai.dto.MatchingRequest;
 import org.talentmatch_ai.dto.MatchingResultMapper;
-import org.talentmatch_ai.model.MatchingResultMessage;
 import org.talentmatch_ai.model.MatchingResult;
+import org.talentmatch_ai.model.MatchingResultMessage;
 import org.talentmatch_ai.model.Status;
 import org.talentmatch_ai.repository.CandidateRepo;
 import org.talentmatch_ai.repository.JobOfferRepo;
 import org.talentmatch_ai.repository.MatchingRepo;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -37,10 +39,10 @@ public class MatchingService {
     public MatchingDto analyzeMatch(MatchingRequest matchingRequest) {
         // TODO Check if candidate and job offer exist
         if (!candidateRepo.existsById(matchingRequest.getCandidateId())) {
-            throw new RuntimeException("Candidate not found");
+            throw new ResourceNotFoundException("Candidate not found"){};
         }
         if (!jobOfferRepo.existsById(matchingRequest.getJobOfferId())) {
-            throw new RuntimeException("Job offer not found");
+            throw new ResourceNotFoundException("Job Offer not found"){};
         }
 
         // TODO Write with status "PENDING" to the database
@@ -76,11 +78,24 @@ public class MatchingService {
     public MatchingDto getMatchingResultById(String matchingId) {
         return matchingRepo.findById(java.util.UUID.fromString(matchingId))
                 .map(MatchingDto::matchingtoDto)
-                .orElseThrow(() -> new RuntimeException("Matching result not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Matching result not found") {});
     }
 
     public List<MatchingDto> getAllMatching() {
         return matchingRepo.findAll().stream()
+                .map(MatchingDto::matchingtoDto)
+                .toList();
+    }
+
+
+    public List<MatchingDto> getMatchingResultsByJobOfferId(String jobOfferId) {
+        return matchingRepo.findByJobOfferId(UUID.fromString(jobOfferId)).stream()
+                .map(MatchingDto::matchingtoDto)
+                .toList();
+    }
+
+    public List<MatchingDto> getMatchingResultsByCandidateId(String candidateId) {
+        return matchingRepo.findByCandidateId(UUID.fromString(candidateId)).stream()
                 .map(MatchingDto::matchingtoDto)
                 .toList();
     }
