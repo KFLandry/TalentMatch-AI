@@ -40,7 +40,7 @@ public class Candidate {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    @NotBlank
+    // on met pas NotBlank prcq parfois sur github ils ne
     @Column(nullable = false)
     private String firstName;
 
