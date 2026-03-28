@@ -16,6 +16,6 @@ public class GithubRepo {
 
     private String language;
 
-    @JsonProperty("profile_created_at")
+    @JsonProperty("created_at")
     private String createdAt;
 }

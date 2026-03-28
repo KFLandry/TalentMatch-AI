@@ -8,6 +8,7 @@ import org.talentmatch_ai.repository.CandidateRepo;
 import org.talentmatch_ai.dto.GithubRepo;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -87,17 +88,19 @@ public class CandidatesService {
         int estimatedYearsOfExperience = repos.stream()
                 .map(GithubRepo::getCreatedAt)
                 .filter(Objects::nonNull)
-                .map(date -> LocalDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME).getYear())
+                .map(date -> OffsetDateTime.parse(date, DateTimeFormatter.ISO_OFFSET_DATE_TIME).getYear())
                 .min(Integer::compareTo)
                 .map(firstYear -> LocalDateTime.now().getYear() - firstYear)
                 .orElse(0);
 
-        return Candidate.builder()
+        Candidate candidate = Candidate.builder()
+                .email(username + "@github.com")
                 .githubUsername(username)
                 .bio(profile.getBio())
                 .skills(topSkills)
                 .yearsOfExperience(estimatedYearsOfExperience)
                 .build();
+        return candidateRepo.save(candidate);
     }
 
 }

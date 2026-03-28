@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/candidate")
+@RequestMapping("/api")
 public class CandidateController {
     private final CandidatesService candidatesService;
 
@@ -19,30 +19,30 @@ public class CandidateController {
         this.candidatesService = candidatesService;
     }
 
-    @PostMapping("/newCandidate")
+    @PostMapping("/candidates")
     // ajout candidat manuellement
     public ResponseEntity<Candidate> create(@Valid @RequestBody Candidate candidate) {
         return ResponseEntity.status(201).body(candidatesService.newCandidate(candidate));
     }
 
-    @PutMapping("/put/{id}")
+    @PutMapping("/candidates/{id}")
     public ResponseEntity<Candidate> update(
             @PathVariable UUID id,
             @Valid @RequestBody Candidate candidate) {
         return ResponseEntity.ok(candidatesService.updateCandidate(id, candidate));
     }
 
-    @GetMapping("/get/all")
+    @GetMapping("/candidates")
     public ResponseEntity<List<Candidate>> getAll() {
         return ResponseEntity.ok(candidatesService.getAllCandidates());
     }
 
-    @GetMapping("/get/{id}")
+    @GetMapping("/candidates/{id}")
     public ResponseEntity<Candidate> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(candidatesService.getCandidateById(id));
     }
 
-    @DeleteMapping("/del/{id}")
+    @DeleteMapping("/candidates/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         candidatesService.deleteCandidate(id);
         return ResponseEntity.noContent().build();

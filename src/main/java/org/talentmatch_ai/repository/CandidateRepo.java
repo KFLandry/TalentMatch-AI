@@ -16,5 +16,4 @@ public interface CandidateRepo extends JpaRepository<Candidate, UUID>
 
     Candidate getCandidateById(UUID id);
 
-    // pas sur que ce soit utile
 }

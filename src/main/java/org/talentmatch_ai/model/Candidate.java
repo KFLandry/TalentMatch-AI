@@ -42,11 +42,12 @@ public class Candidate {
 
     // on met pas NotBlank prcq parfois sur github ils ne
     @Column(nullable = false)
-    private String firstName;
+    @Builder.Default // sinon lombook ignore la valeur par defaut
+    private String firstName = "";
 
-    @NotBlank
     @Column(nullable = false)
-    private String lastName;
+    @Builder.Default
+    private String lastName = "";
 
     @Email
     @NotBlank
@@ -65,7 +66,8 @@ public class Candidate {
 
     @Min(0)
     @Column(nullable = false)
-    private Integer yearsOfExperience;
+    @Builder.Default
+    private Integer yearsOfExperience = 0;
 
     @Lob
     private String bio;
