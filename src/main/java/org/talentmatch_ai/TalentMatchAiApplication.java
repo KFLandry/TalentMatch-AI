@@ -1,4 +1,4 @@
-package org.example.talentmatch_ai;
+package org.talentmatch_ai;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
