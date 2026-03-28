@@ -1,5 +1,6 @@
 package org.talentmatch_ai.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -46,9 +47,11 @@ public class MatchingResult {
 
     @Min(0)
     @Max(100)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Integer score;
 
     @Lob
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private String analysis;
 
     @NotNull
@@ -59,9 +62,11 @@ public class MatchingResult {
     @Column(nullable = false, updatable = false)
     private LocalDateTime requestedAt;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private LocalDateTime completedAt;
 
     @Lob
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private String errorMessage;
 
     @PrePersist

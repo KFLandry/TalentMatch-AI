@@ -34,6 +34,27 @@ spring:
     console:
       enabled: true
 
+app:
+  kafka:
+    matching-topic: matching-requests
+  security:
+    users:
+      recruiter:
+        username: recruiter
+        password: recruiter123
+      admin:
+        username: admin
+        password: admin123
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,matchingstats
+  endpoint:
+    health:
+      show-details: always
+
 logging:
     level:
         root: INFO

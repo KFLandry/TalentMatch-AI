@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -14,6 +15,8 @@ import org.talentmatch_ai.repository.JobOfferRepo;
 import org.talentmatch_ai.repository.MatchingRepo;
 import org.talentmatch_ai.util.TestMockFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -105,18 +108,38 @@ class ConsumerServiceTest {
 
     @Test
     void consume_shouldSetProcessingBeforeCalling() {
+        List<Status> savedStatuses = new ArrayList<>();
+
         when(matchingRepo.findById(matchingResult.getId())).thenReturn(Optional.of(matchingResult));
-        when(matchingRepo.save(any(MatchingResult.class))).thenAnswer(i -> i.getArgument(0));
+        when(matchingRepo.save(any(MatchingResult.class))).thenAnswer(i -> {
+            MatchingResult current = i.getArgument(0);
+            // Snapshot enum value at save-time to avoid mutable reference issues.
+            savedStatuses.add(current.getStatus());
+            return current;
+        });
         when(candidateRepo.findById(candidate.getId())).thenReturn(Optional.of(candidate));
         when(jobOfferRepo.findById(jobOffer.getId())).thenReturn(Optional.of(jobOffer));
         when(ollamaChatModel.call(anyString())).thenReturn("Score: 50\n\nPoints forts:\n- OK");
 
         consumerService.consume(matchingResultMessage);
 
-        ArgumentCaptor<MatchingResult> captor = ArgumentCaptor.forClass(MatchingResult.class);
-        verify(matchingRepo, times(2)).save(captor.capture());
+        verify(matchingRepo, times(2)).save(any(MatchingResult.class));
+        assertEquals(Status.PROCESSING, savedStatuses.get(0));
+        assertEquals(Status.COMPLETED, savedStatuses.get(1));
 
-        assertEquals(Status.COMPLETED, captor.getAllValues().getFirst().getStatus()); // 1er save = PROCESSING
+        InOrder inOrder = inOrder(matchingRepo, ollamaChatModel);
+        inOrder.verify(matchingRepo).save(any(MatchingResult.class));
+        inOrder.verify(ollamaChatModel).call(anyString());
+    }
+
+    @Test
+    void consume_shouldReturnWithoutSavingWhenMatchingNotFound() {
+        when(matchingRepo.findById(matchingResult.getId())).thenReturn(Optional.empty());
+
+        consumerService.consume(matchingResultMessage);
+
+        verify(matchingRepo, never()).save(any(MatchingResult.class));
+        verifyNoInteractions(candidateRepo, jobOfferRepo, ollamaChatModel);
     }
 }
 
