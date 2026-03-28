@@ -2,6 +2,7 @@ package org.talentmatch_ai.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -18,22 +19,34 @@ import org.talentmatch_ai.repository.MatchingRepo;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.time.LocalDateTime;
 
 @Service
 @Slf4j
 public class MatchingService {
+    private static final String DEFAULT_MATCHING_TOPIC = "matching-requests";
+
     private final KafkaTemplate<String, MatchingResultMessage> kafkaTemplate;
     private  final CandidateRepo candidateRepo;
     private final JobOfferRepo jobOfferRepo;
     private final MatchingRepo matchingRepo;
     private final MatchingResultMapper matchingResultMapper;
+    private final String matchingTopic;
 
-    public MatchingService(KafkaTemplate<String, MatchingResultMessage> kafkaTemplate, MatchingRepo matchingRepo, CandidateRepo candidateRepo, JobOfferRepo jobOfferRepo, MatchingResultMapper matchingResultMapper) {
+    public MatchingService(
+            KafkaTemplate<String, MatchingResultMessage> kafkaTemplate,
+            MatchingRepo matchingRepo,
+            CandidateRepo candidateRepo,
+            JobOfferRepo jobOfferRepo,
+            MatchingResultMapper matchingResultMapper,
+            @Value("${app.kafka.matching-topic:" + DEFAULT_MATCHING_TOPIC + "}") String matchingTopic
+    ) {
         this.kafkaTemplate = kafkaTemplate;
         this.candidateRepo = candidateRepo;
         this.jobOfferRepo = jobOfferRepo;
         this.matchingRepo = matchingRepo;
         this.matchingResultMapper = matchingResultMapper;
+        this.matchingTopic = matchingTopic;
     }
 
     public MatchingDto analyzeMatch(MatchingRequest matchingRequest) {
@@ -61,13 +74,16 @@ public class MatchingService {
                 .candidateId(String.valueOf(matchingResult.getCandidateId()))
                 .jobOfferId(String.valueOf(matchingResult.getJobOfferId()))
                 .build();
-        String matchingTopic = "matching-requests";
         CompletableFuture<SendResult<String, MatchingResultMessage>> future = kafkaTemplate.send(matchingTopic, matchingResultMessage);
         future.whenComplete((result, ex) -> {
             if (ex == null) {
                 log.info("Sent message=[{}] with offset=[{}]", matchingResultMessage.getMatchingId(), result.getRecordMetadata().offset());
             } else {
-                log.info("Unable to send message=[{}] due to : {}", matchingResultMessage.getMatchingId(), ex.getMessage());
+                matchingResult.setStatus(Status.FAILED);
+                matchingResult.setErrorMessage("Kafka publish error: " + ex.getMessage());
+                matchingResult.setCompletedAt(LocalDateTime.now());
+                matchingRepo.save(matchingResult);
+                log.error("Unable to send message=[{}] due to : {}", matchingResultMessage.getMatchingId(), ex.getMessage());
             }
         });
 

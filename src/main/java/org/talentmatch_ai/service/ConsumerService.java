@@ -37,7 +37,10 @@ public class ConsumerService {
         this.ollamaChatModel = ollamaChatModel;
     }
 
-    @KafkaListener(topics = "matching-requests", groupId = "talentmatch-group")
+    @KafkaListener(
+            topics = "${app.kafka.matching-topic:matching-requests}",
+            groupId = "${spring.kafka.consumer.group-id}"
+    )
     public void consume(MatchingResultMessage message) {
         log.info("Received message: {}", message.getMatchingId());
 
